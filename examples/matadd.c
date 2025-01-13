@@ -9,7 +9,7 @@ int main() {
     
     Mat A = laMatNew(7, 7);
 	Mat B = laMatNew(7, 7);
-	Mat C = laMatNew(10, 7);
+	Mat C = laMatNew(7, 7);
 
 	// Set every value in matrix A and B to a whole number between -5 and 5 
 	for(int row = 0; row < A.rows; row++) {
@@ -23,6 +23,8 @@ int main() {
     laMatAdd(A, B, C);
 	
     // You can use safe functions for debugging and error handling
+    // Safe functions may be slightly slower, but they should run fine as long
+    // as you don't need millions of calculations per second
     // Note: you can only run safe functions on arbitrary Mat's (no Mat4's or Vec4's)
     // if(laMatSafeAdd(A, B, C) != 0) {
     //     printf("Cancelled operation due to error :(\n");
