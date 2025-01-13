@@ -53,22 +53,22 @@ float randf(float vmin, float vmax) {
  */
 
 typedef struct {
-    int rows;
-    int cols;
+    unsigned char rows;
+    unsigned char cols;
     float* data;
 } Mat; 
 
 typedef struct {
-	int rows;
-	int cols;
+	unsigned char rows;
+	unsigned char cols;
 	float data[16];
 } Mat4;
 
 #define laMat4New (Mat4){MAT4_ROWS, MAT4_COLS, {.0f, .0f, .0f, .0f, .0f, .0f, .0f, .0f, .0f, .0f, .0f, .0f, .0f, .0f, .0f, .0f}}
 
 typedef struct {
-	int rows;
-	int cols;
+	unsigned char rows;
+	unsigned char cols;
 	float data[4];
 } Vec4;
 
@@ -174,49 +174,5 @@ void laMatFree(Mat* mat) {
 	free(mat->data);
 	mat->data = NULL;
 }
-
-/*
- * Mat4's
- */
-
-/*void mat4fill(float val, Mat4* A) {
-    for(int i = 0; i < MAT4_ROWS; i++) {
-        for(int j = 0; j < MAT4_COLS; j++) {
-            MATSET(val, A, i, j);
-        }
-    }
-}
-
-void mat4add(const Mat4* A, const Mat4* B, Mat4* C) {
-    for(int i = 0; i < MAT4_ROWS; i++) {
-        for(int j = 0; j < MAT4_COLS; j++) {
-        	MATSET(MATGET(A, i, j) + MATGET(B, i, j), C, i, j);
-		}
-    }
-}
-
-void mat4mul(const Mat4* A, const Mat4* B, Mat4* C) {
-    for(int i = 0; i < MAT4_ROWS; i++) {
-        for(int j = 0; j < MAT4_COLS; j++) {
-            float sum = 0;
-            for(int k = 0; k < MAT4_ROWS; k++) {
-                sum += MATGET(A, i, k) * MATGET(B, k, j);
-            }
-            MATSET(sum, C, j, i);
-        }
-    }
-}
-
-void mat4vecmul(const Mat4* A, const Vec4* B, Vec4* C) {
-    for(int i = 0; i < VEC4_ROWS; i++) {
-        for(int j = 0; j < VEC4_COLS; j++) {
-            float sum = 0;
-            for(int k = 0; k < MAT4_ROWS; k++) {
-                sum += MATGET(A, i, k) * MATGET(B, k, j);
-            }
-            MATSET(sum, C, j, i);
-        }
-    }
-}*/
 
 #endif
