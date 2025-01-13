@@ -7,6 +7,7 @@
 int main() {
     srand(time(NULL));
 
+	// Note: you don't need to manually free static Mat's (Mat4, Vec4, etc.)
 	Mat4 A = laMat4New;
 	Vec4 B = laVec4New;
 	Vec4 C = laVec4New;

@@ -33,5 +33,10 @@ int main() {
 	laMatPrint(B);
 	laMatPrint(C);
 
+    // Arbitrary Mat's need to be freed manually
+    laMatFree(&A);
+    laMatFree(&C);
+    laMatFree(&B);
+
     return 0;
 }
