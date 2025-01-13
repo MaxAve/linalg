@@ -28,19 +28,29 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#include <math.h>
 
-#define MATGET(mat, row, col) (mat)->data[(col) * (mat)->cols + (row)]
-#define MATGETBUF(data, row, col, cols) data[(col) * (cols) + (row)]
-#define MATSET(x, mat, row, col) (mat)->data[(col) * (mat)->cols + (row)] = (x)
+#define laMatGet(mat, row, col) (mat).data[(col) * (mat).cols + (row)]
+#define laMatGetRaw(data, row, col, cols) data[(col) * (cols) + (row)]
+#define laMatSet(x, mat, row, col) (mat).data[(col) * (mat).cols + (row)] = (x)
+#define laMatSetRaw(x, data, row, col, cols) data[(col) * (cols) + (row)] = (x)
 
 #define MAT4_ROWS 4
 #define MAT4_COLS 4
 #define VEC4_ROWS 4
 #define VEC4_COLS 1
 
+/*
+ * Utilities
+ */
+
 float randf(float vmin, float vmax) {
     return (float)rand()/(float)(RAND_MAX/(vmax - vmin))+vmin;
 }
+
+/*
+ * Struct definitions
+ */
 
 typedef struct {
     int rows;
@@ -54,7 +64,7 @@ typedef struct {
 	float data[16];
 } Mat4;
 
-#define NEW_MAT4 (Mat4){MAT4_ROWS, MAT4_COLS, {.0f, .0f, .0f, .0f, .0f, .0f, .0f, .0f, .0f, .0f, .0f, .0f, .0f, .0f, .0f, .0f}}
+#define laMat4New (Mat4){MAT4_ROWS, MAT4_COLS, {.0f, .0f, .0f, .0f, .0f, .0f, .0f, .0f, .0f, .0f, .0f, .0f, .0f, .0f, .0f, .0f}}
 
 typedef struct {
 	int rows;
@@ -62,7 +72,11 @@ typedef struct {
 	float data[4];
 } Vec4;
 
-#define NEW_VEC4 (Vec4){VEC4_ROWS, VEC4_COLS, {.0f, .0f, .0f, .0f}}
+#define laVec4New (Vec4){VEC4_ROWS, VEC4_COLS, {.0f, .0f, .0f, .0f}}
+
+/*
+ * Operations
+ */
 
 void printmat(const float* data, int rows, int cols) {
     printf("[");
@@ -70,7 +84,7 @@ void printmat(const float* data, int rows, int cols) {
         if(i > 0)
             printf(" ");
         for(int j = 0; j < cols; j++) {
-            float v = MATGETBUF(data, i, j, cols);
+            float v = laMatGetRaw(data, i, j, cols);
             if(v >= 0)
                 printf(" ");
             printf("%0.4f", v);
@@ -83,65 +97,89 @@ void printmat(const float* data, int rows, int cols) {
     printf("]\n");
 }
 
-#define PRINT_MAT(mat) printmat((mat)->data, (mat)->rows, (mat)->cols)
+#define laMatPrint(mat) printmat((mat).data, (mat).rows, (mat).cols)
+
+void matfill(float val, float* mat, int rows, int cols) {
+    for(int i = 0; i < rows; i++) {
+        for(int j = 0; j < cols; j++) {
+            laMatSetRaw(val, mat, i, j, cols);
+        }
+    }
+}
+
+#define laMatFill(mat, x) matfill(x, mat.data, mat.rows, mat.cols)
+
+void matadd(const float *A, int arows, int acols, const float *B, int brows, int bcols, float *C) {
+    for(int i = 0; i < arows; i++) {
+        for(int j = 0; j < acols; j++) {
+        	laMatSetRaw(laMatGetRaw(A, i, j, acols) + laMatGetRaw(B, i, j, bcols), C, i, j, acols);
+		}
+    }
+}
+
+#define laMatAdd(A, B, C) matadd((A).data, (A).rows, (A).cols, (B).data, (B).rows, (B).cols, (C).data)
+
+int matsafeadd(const Mat* A, const Mat* B, Mat* C) {
+    if(A->rows != B->rows || A->cols != B->cols || B->rows != C->rows || B->cols != C->cols) {
+        printf("[ERROR] linalg:laMatSafeAdd -> matrix sizes do not match (%i, %i), (%i, %i), (%i, %i)\n", A->rows, A->cols, B->rows, B->cols, C->rows, C->cols);
+        return -1;
+    }
+    laMatAdd(*A, *B, *C);
+    return 0;
+}
+
+#define laMatSafeAdd(A, B, C) matsafeadd(&A, &B, &C)
+
+void matmul(const float *A, int arows, int acols, const float *B, int brows, int bcols, float *C, int ccols) {
+    for(int i = 0; i < brows; i++) {
+        for(int j = 0; j < bcols; j++) {
+            float sum = 0;
+            for(int k = 0; k < arows; k++) {
+                sum += laMatGetRaw(A, i, k, acols) * laMatGetRaw(B, k, j, bcols);
+            }
+            laMatSetRaw(sum, C, j, i, ccols);
+        }
+    }
+}
+
+#define laMatMul(A, B, C) matmul((A).data, (A).rows, (A).cols, (B).data, (B).rows, (B).cols, (C).data, (C).cols)
+
+int matsafemul(const Mat* A, const Mat* B, Mat* C) {
+    if(A->cols != B->rows) {
+        printf("[ERROR] linalg:laMatSafeMul -> matrix sizes do not match (%i, %i), (%i, %i), (%i, %i). Expected: (%i, %i), (%i, %i), (%i, %i)\n", A->rows, A->cols, B->rows, B->cols, C->rows, C->cols, A->rows, A->cols, A->cols, B->rows, 0, 0);
+        return -1;
+    }
+    laMatMul(*A, *B, *C);
+    return 0;
+}
+
+#define laMatSafeMul(A, B, C) matsafemul(&A, &B, &C)
 
 /*
  * Arbitrary Mat's
  */
 
-void matfill(float val, Mat *A) {
-    for(int i = 0; i < A->rows; i++) {
-        for(int j = 0; j < A->cols; j++) {
-            MATSET(val, A, i, j);
-        }
-    }
-}
-
-Mat mkmat(int rows, int cols) {
+Mat laMatNew(int rows, int cols) {
     Mat mat;
     mat.rows = rows;
     mat.cols = cols;
     mat.data = (float*)malloc(sizeof(float) * rows * cols);
-    matfill(0, &mat);
+    laMatFill(mat, 0.0f);
     return mat;
 }
 
-void freemat(Mat* mat) {
+void laMatFree(Mat* mat) {
 	mat->rows = 0;
 	mat->cols = 0;
 	free(mat->data);
 	mat->data = NULL;
 }
 
-void matadd(const Mat *A, const Mat *B, Mat *C) {
-    if(A->rows != B->rows || A->cols != B->cols) {
-        printf("[ERROR] Input matrix size does not match while trying to add!");
-        return;
-    }
-    for(int i = 0; i < A->rows; i++) {
-        for(int j = 0; j < A->cols; j++) {
-        	MATSET(MATGET(A, i, j) + MATGET(B, i, j), C, i, j);
-		}
-    }
-}
-
-void matmul(const Mat *A, const Mat *B, Mat *C) {
-    for(int i = 0; i < B->rows; i++) {
-        for(int j = 0; j < B->cols; j++) {
-            float sum = 0;
-            for(int k = 0; k < A->rows; k++) {
-                sum += MATGET(A, i, k) * MATGET(B, k, j);
-            }
-            MATSET(sum, C, j, i);
-        }
-    }
-}
-
 /*
  * Mat4's
  */
 
-void mat4fill(float val, Mat4* A) {
+/*void mat4fill(float val, Mat4* A) {
     for(int i = 0; i < MAT4_ROWS; i++) {
         for(int j = 0; j < MAT4_COLS; j++) {
             MATSET(val, A, i, j);
@@ -179,6 +217,6 @@ void mat4vecmul(const Mat4* A, const Vec4* B, Vec4* C) {
             MATSET(sum, C, j, i);
         }
     }
-}
+}*/
 
 #endif
