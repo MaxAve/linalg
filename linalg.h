@@ -143,10 +143,10 @@ Mat4 laMat4GetRotation(Vec3 R, float angle) {
 
 Mat4 laMat4GetTranslation(Vec3 tf) {
     return (Mat4){MAT4_ROWS, MAT4_COLS, {
-        1, 0, 0, tf.data[0],
-        0, 1, 0, tf.data[1],
-        0, 0, 1, tf.data[2],
-        0, 0, 0, 1,
+        1, 			0, 			0,			0, 
+        0, 			1, 			0,			0,
+        0, 			0, 			1,			0,
+        tf.data[0], tf.data[1], tf.data[2], 1
     }};
 }
 
@@ -174,7 +174,8 @@ void printmat(const float* data, int rows, int cols) {
 void matfill(float val, float* mat, int rows, int cols) {
     for(int i = 0; i < rows; i++) {
         for(int j = 0; j < cols; j++) {
-            laMatSetRaw(val, mat, i, j, cols);
+            printf("(%i, %i)", i, j);
+			laMatSetRaw(val, mat, i, j, cols);
         }
     }
 }
@@ -202,16 +203,18 @@ int matsafeadd(const Mat* A, const Mat* B, Mat* C) {
 
 #define laMatSafeAdd(A, B, C) matsafeadd(&A, &B, &C)
 
-void matmul(const float *A, int arows, int acols, const float *B, int brows, int bcols, float *C, int ccols) {
-    for(int i = 0; i < brows; i++) {
-        for(int j = 0; j < bcols; j++) {
-            float sum = 0;
-            for(int k = 0; k < arows; k++) {
-                sum += laMatGetRaw(A, i, k, acols) * laMatGetRaw(B, k, j, bcols);
-            }
-            laMatSetRaw(sum, C, j, i, ccols);
-        }
-    }
+void matmul(const float *A, int arows, int acols,
+			const float *B, int brows, int bcols,
+			float *C, int ccols) {
+	for(int ar = 0; ar < arows; ar++) {
+		for(int bc = 0; bc < bcols; bc++) {
+			float sum = 0.0f;
+			for(int i = 0; i < acols; i++) {
+				sum += laMatGetRaw(A, ar, i, acols) * laMatGetRaw(B, i, bc, bcols);
+			}
+			laMatSetRaw(sum, C, ar, bc, ccols);
+		}
+	}
 }
 
 #define laMatMul(A, B, C) matmul((A).data, (A).rows, (A).cols, (B).data, (B).rows, (B).cols, (C).data, (C).cols)
@@ -236,7 +239,6 @@ Mat laMatNew(int rows, int cols) {
     mat.rows = rows;
     mat.cols = cols;
     mat.data = (float*)malloc(sizeof(float) * rows * cols);
-    laMatFill(mat, 0.0f);
     return mat;
 }
 

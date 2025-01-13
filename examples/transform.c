@@ -7,10 +7,12 @@
 int main() {
     srand(time(NULL));
 
-    Vec4 a = VEC4(0, 0, 0, 1);
+    Vec4 a = VEC4(-10, 0, 27, 1);
     Mat4 trans = laMat4GetTranslation(VEC3(69, 420, 21));
     Vec4 res = laVec4Empty;
-    laMatMul(a, trans, res);
+   
+	laMatPrint(a);
+	laMatMul(trans, a, res);
     laMatPrint(trans);
     laMatPrint(res);
 
