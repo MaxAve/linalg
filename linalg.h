@@ -30,7 +30,8 @@
 #include <time.h>
 #include <math.h>
 
-#define PI 3.14159265359
+#define PI   3.14159265359
+#define PI_2 6.28318530718
 
 #define laMatGet(mat, row, col) ((mat).data[(col) * (mat).cols + (row)])
 #define laMatGetRaw(data, row, col, cols) (data[(col) * (cols) + (row)])
@@ -52,6 +53,14 @@ float randf(float vmin, float vmax) {
     return (float)rand()/(float)(RAND_MAX/(vmax - vmin))+vmin;
 }
 
+float deg2rad(float deg) {
+    return deg / 180.0f * PI;
+}
+
+float rad2deg(float deg) {
+    return deg / PI * 180.0f;
+}
+
 /*
  * Struct definitions
  */
@@ -64,6 +73,7 @@ typedef struct {
 
 #define laVec3Empty (Vec3){VEC3_ROWS, VEC3_COLS, {.0f, .0f, .0f}}
 #define laVec3New(x, y, z) (Vec3){VEC3_ROWS, VEC3_COLS, {(x), (y), (z)}}
+#define VEC3(x, y, z) (Vec3){VEC3_ROWS, VEC3_COLS, {(x), (y), (z)}}
 
 typedef struct {
 	unsigned char rows;
@@ -72,6 +82,8 @@ typedef struct {
 } Vec4;
 
 #define laVec4Empty (Vec4){VEC4_ROWS, VEC4_COLS, {.0f, .0f, .0f, .0f}}
+#define laVec4New(x, y, z, w) (Vec4){VEC4_ROWS, VEC4_COLS, {(x), (y), (z), (w)}}
+#define VEC4(x, y, z, w) (Vec4){VEC4_ROWS, VEC4_COLS, {(x), (y), (z), (w)}}
 
 typedef struct {
     unsigned char rows;
@@ -111,15 +123,30 @@ float norm(float* data, int rows) {
 
 #define laVecNormalize(vec) norm(vec.data, vec.rows)
 
-Mat4 laMat4Rotation(const Vec3* R, float angle) {
-    const float x=R->data[0], y=R->data[1], z=R->data[2];
+/*
+ * Returns a 4x4 rotation matrix for rotating around the vector [R] by the angle [angle]
+ * @param R rotation axis (needs to be normalized before calling the function to get expected results)
+ * @param angle rotation angle (radians)
+ */
+Mat4 laMat4GetRotation(Vec3 R, float angle) {
+    const float x=R.data[0], y=R.data[1], z=R.data[2];
     const float sinang = sin(angle);
     const float cosang = cos(angle);
+    // TODO check if row-col order is correct
     return (Mat4){MAT4_ROWS, MAT4_COLS, {
         cosang + x*x * (1 - cosang),    x*y * (1 - cosang) + z * sinang,    z * x * (1 - cosang) - z * sinang,  0,
         x*y*(1 - cosang) - z * sinang,  cosang + y*y * (1 - cosang),        z * y * (1 - cosang) + x * sinang,  0,
         x*z*(1 - cosang) + y * sinang,  y*z*(1 - cosang) - x*sinang,        cosang + z*z*(1 - cosang),          0,
         0,                              0,                                  0,                                  1 
+    }};
+}
+
+Mat4 laMat4GetTranslation(Vec3 tf) {
+    return (Mat4){MAT4_ROWS, MAT4_COLS, {
+        1, 0, 0, tf.data[0],
+        0, 1, 0, tf.data[1],
+        0, 0, 1, tf.data[2],
+        0, 0, 0, 1,
     }};
 }
 
