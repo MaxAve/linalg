@@ -38,13 +38,6 @@
 #define laMatSet(x, mat, row, col) ((mat).data[(col) * (mat).cols + (row)] = (x))
 #define laMatSetRaw(x, data, row, col, cols) (data[(col) * (cols) + (row)] = (x))
 
-#define MAT4_ROWS 4
-#define MAT4_COLS 4
-#define VEC4_ROWS 4
-#define VEC4_COLS 1
-#define VEC3_ROWS 3
-#define VEC3_COLS 1
-
 /*
  * Utilities
  */
@@ -68,12 +61,22 @@ float rad2deg(float deg) {
 typedef struct {
 	unsigned char rows;
 	unsigned char cols;
+	float data[2];
+} Vec2;
+
+#define laVec2Empty (Vec2){2, 1, {.0f, .0f}}
+#define laVec2New(x, y) (Vec2){2, 1, {(x), (y)}}
+#define VEC2(x, y) (Vec2){2, 1, {(x), (y)}}
+
+typedef struct {
+	unsigned char rows;
+	unsigned char cols;
 	float data[3];
 } Vec3;
 
-#define laVec3Empty (Vec3){VEC3_ROWS, VEC3_COLS, {.0f, .0f, .0f}}
-#define laVec3New(x, y, z) (Vec3){VEC3_ROWS, VEC3_COLS, {(x), (y), (z)}}
-#define VEC3(x, y, z) (Vec3){VEC3_ROWS, VEC3_COLS, {(x), (y), (z)}}
+#define laVec3Empty (Vec3){3, 1, {.0f, .0f, .0f}}
+#define laVec3New(x, y, z) (Vec3){3, 1, {(x), (y), (z)}}
+#define VEC3(x, y, z) (Vec3){3, 1, {(x), (y), (z)}}
 
 typedef struct {
 	unsigned char rows;
@@ -81,9 +84,9 @@ typedef struct {
 	float data[4];
 } Vec4;
 
-#define laVec4Empty (Vec4){VEC4_ROWS, VEC4_COLS, {.0f, .0f, .0f, .0f}}
-#define laVec4New(x, y, z, w) (Vec4){VEC4_ROWS, VEC4_COLS, {(x), (y), (z), (w)}}
-#define VEC4(x, y, z, w) (Vec4){VEC4_ROWS, VEC4_COLS, {(x), (y), (z), (w)}}
+#define laVec4Empty (Vec4){4, 1, {.0f, .0f, .0f, .0f}}
+#define laVec4New(x, y, z, w) (Vec4){4, 1, {(x), (y), (z), (w)}}
+#define VEC4(x, y, z, w) (Vec4){4, 1, {(x), (y), (z), (w)}}
 
 typedef struct {
     unsigned char rows;
@@ -94,11 +97,30 @@ typedef struct {
 typedef struct {
 	unsigned char rows;
 	unsigned char cols;
+	float data[4];
+} Mat2;
+
+#define laMat2Empty (Mat2){2, 2, {.0f, .0f, .0f, .0f}}
+#define MAT2 laMat2Empty
+
+typedef struct {
+	unsigned char rows;
+	unsigned char cols;
+	float data[9];
+} Mat3;
+
+#define laMat3Empty (Mat3){3, 3, {.0f, .0f, .0f, .0f, .0f, .0f, .0f, .0f, .0f}
+#define MAT3 laMat3Empty
+
+typedef struct {
+	unsigned char rows;
+	unsigned char cols;
 	float data[16];
 } Mat4;
 
 // Empty Mat4
-#define laMat4Empty (Mat4){MAT4_ROWS, MAT4_COLS, {.0f, .0f, .0f, .0f, .0f, .0f, .0f, .0f, .0f, .0f, .0f, .0f, .0f, .0f, .0f, .0f}}
+#define laMat4Empty (Mat4){4, 4, {.0f, .0f, .0f, .0f, .0f, .0f, .0f, .0f, .0f, .0f, .0f, .0f, .0f, .0f, .0f, .0f}}
+#define MAT4 laMat4Empty
 
 /*
  * Operations
@@ -107,7 +129,8 @@ typedef struct {
 float veclen(const float* data, int rows) {
     float square_sum;
     for(int i = 0; i < rows; i++) {
-        square_sum += laMatGetRaw(data, i, 0, 1);
+		float x = laMatGetRaw(data, i, 0, 1);
+        square_sum += x*x;
     }
     return sqrt(square_sum);
 }
@@ -133,7 +156,7 @@ Mat4 laMat4GetRotation(Vec3 R, float angle) {
     const float sinang = sin(angle);
     const float cosang = cos(angle);
     // TODO check if row-col order is correct
-    return (Mat4){MAT4_ROWS, MAT4_COLS, {
+    return (Mat4){4, 4, {
         cosang + x*x * (1 - cosang),    x*y * (1 - cosang) + z * sinang,    z * x * (1 - cosang) - z * sinang,  0,
         x*y*(1 - cosang) - z * sinang,  cosang + y*y * (1 - cosang),        z * y * (1 - cosang) + x * sinang,  0,
         x*z*(1 - cosang) + y * sinang,  y*z*(1 - cosang) - x*sinang,        cosang + z*z*(1 - cosang),          0,
@@ -142,7 +165,7 @@ Mat4 laMat4GetRotation(Vec3 R, float angle) {
 }
 
 Mat4 laMat4GetTranslation(Vec3 tf) {
-    return (Mat4){MAT4_ROWS, MAT4_COLS, {
+    return (Mat4){4, 4, {
         1, 			0, 			0,			0, 
         0, 			1, 			0,			0,
         0, 			0, 			1,			0,
