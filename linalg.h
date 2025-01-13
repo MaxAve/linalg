@@ -84,9 +84,13 @@ typedef struct {
 	float data[4];
 } Vec4;
 
-#define laVec4Empty (Vec4){4, 1, {.0f, .0f, .0f, .0f}}
-#define laVec4New(x, y, z, w) (Vec4){4, 1, {(x), (y), (z), (w)}}
-#define VEC4(x, y, z, w) (Vec4){4, 1, {(x), (y), (z), (w)}}
+#define laVec4Empty ((Vec4){4, 1, {.0f, .0f, .0f, .0f}})
+#define laVec4New(x, y, z, w) ((Vec4){4, 1, {(x), (y), (z), (w)}})
+#define VEC4(x, y, z, w) ((Vec4){4, 1, {(x), (y), (z), (w)}})
+
+#define RIGHT (VEC4(1.0f, 0.0f, 0.0f, 1.0f))
+#define UP (VEC4(0.0f, 1.0f, 0.0f, 1.0f))
+#define FORWARD (VEC4(0.0f, 0.0f, 1.0f, 1.0f))
 
 typedef struct {
     unsigned char rows;
