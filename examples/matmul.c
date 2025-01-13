@@ -8,9 +8,9 @@ int main() {
     srand(time(NULL));
 
 	// Note: you don't need to manually free static Mat's (Mat4, Vec4, etc.)
-	Mat4 A = laMat4New;
-	Vec4 B = laVec4New;
-	Vec4 C = laVec4New;
+	Mat4 A = laMat4Empty;
+	Vec4 B = laVec4Empty;
+	Vec4 C = laVec4Empty;
 	
 	// This works too, but the above approach is recommended when working with matrices of a known size (e.g. 4x4)
 	// Mat A = laMatNew(4, 4);

@@ -30,15 +30,19 @@
 #include <time.h>
 #include <math.h>
 
-#define laMatGet(mat, row, col) (mat).data[(col) * (mat).cols + (row)]
-#define laMatGetRaw(data, row, col, cols) data[(col) * (cols) + (row)]
-#define laMatSet(x, mat, row, col) (mat).data[(col) * (mat).cols + (row)] = (x)
-#define laMatSetRaw(x, data, row, col, cols) data[(col) * (cols) + (row)] = (x)
+#define PI 3.14159265359
+
+#define laMatGet(mat, row, col) ((mat).data[(col) * (mat).cols + (row)])
+#define laMatGetRaw(data, row, col, cols) (data[(col) * (cols) + (row)])
+#define laMatSet(x, mat, row, col) ((mat).data[(col) * (mat).cols + (row)] = (x))
+#define laMatSetRaw(x, data, row, col, cols) (data[(col) * (cols) + (row)] = (x))
 
 #define MAT4_ROWS 4
 #define MAT4_COLS 4
 #define VEC4_ROWS 4
 #define VEC4_COLS 1
+#define VEC3_ROWS 3
+#define VEC3_COLS 1
 
 /*
  * Utilities
@@ -53,6 +57,23 @@ float randf(float vmin, float vmax) {
  */
 
 typedef struct {
+	unsigned char rows;
+	unsigned char cols;
+	float data[3];
+} Vec3;
+
+#define laVec3Empty (Vec3){VEC3_ROWS, VEC3_COLS, {.0f, .0f, .0f}}
+#define laVec3New(x, y, z) (Vec3){VEC3_ROWS, VEC3_COLS, {(x), (y), (z)}}
+
+typedef struct {
+	unsigned char rows;
+	unsigned char cols;
+	float data[4];
+} Vec4;
+
+#define laVec4Empty (Vec4){VEC4_ROWS, VEC4_COLS, {.0f, .0f, .0f, .0f}}
+
+typedef struct {
     unsigned char rows;
     unsigned char cols;
     float* data;
@@ -64,19 +85,43 @@ typedef struct {
 	float data[16];
 } Mat4;
 
-#define laMat4New (Mat4){MAT4_ROWS, MAT4_COLS, {.0f, .0f, .0f, .0f, .0f, .0f, .0f, .0f, .0f, .0f, .0f, .0f, .0f, .0f, .0f, .0f}}
-
-typedef struct {
-	unsigned char rows;
-	unsigned char cols;
-	float data[4];
-} Vec4;
-
-#define laVec4New (Vec4){VEC4_ROWS, VEC4_COLS, {.0f, .0f, .0f, .0f}}
+// Empty Mat4
+#define laMat4Empty (Mat4){MAT4_ROWS, MAT4_COLS, {.0f, .0f, .0f, .0f, .0f, .0f, .0f, .0f, .0f, .0f, .0f, .0f, .0f, .0f, .0f, .0f}}
 
 /*
  * Operations
  */
+
+float veclen(const float* data, int rows) {
+    float square_sum;
+    for(int i = 0; i < rows; i++) {
+        square_sum += laMatGetRaw(data, i, 0, 1);
+    }
+    return sqrt(square_sum);
+}
+
+#define laVecLen(vec) veclen(vec.data, vec.rows)
+
+float norm(float* data, int rows) {
+    const float vl = veclen(data, rows);
+    for(int i = 0; i < rows; i++) {
+        laMatSetRaw(laMatGetRaw(data, i, 0, 1) / vl, data, i, 0, 1);
+    }
+}
+
+#define laVecNormalize(vec) norm(vec.data, vec.rows)
+
+Mat4 laMat4Rotation(const Vec3* R, float angle) {
+    const float x=R->data[0], y=R->data[1], z=R->data[2];
+    const float sinang = sin(angle);
+    const float cosang = cos(angle);
+    return (Mat4){MAT4_ROWS, MAT4_COLS, {
+        cosang + x*x * (1 - cosang),    x*y * (1 - cosang) + z * sinang,    z * x * (1 - cosang) - z * sinang,  0,
+        x*y*(1 - cosang) - z * sinang,  cosang + y*y * (1 - cosang),        z * y * (1 - cosang) + x * sinang,  0,
+        x*z*(1 - cosang) + y * sinang,  y*z*(1 - cosang) - x*sinang,        cosang + z*z*(1 - cosang),          0,
+        0,                              0,                                  0,                                  1 
+    }};
+}
 
 void printmat(const float* data, int rows, int cols) {
     printf("[");
