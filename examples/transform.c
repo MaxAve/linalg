@@ -5,50 +5,33 @@
 #include "../linalg.h"
 
 int main() {
-    srand(time(NULL));
+    Vec4 vec;
 
-    Vec4 a = VEC4(-10, 0, 27, 1);
-    Mat4 trans = laMat4GetTranslation(VEC3(69, 420, 21));
-    Vec4 res = laVec4Empty;
+	vec = VEC4(-10, 0.7, 27, 1); // Vector to be transformed
+  
+	printf("=== TRANSLATION ===\n");
+	printf("Before:\n");
+	laMatPrint(vec);
+
+	Mat4 trans = laMat4GetTranslation(VEC3(79, 419.3, 69393)); // Translation matrix
+
+    vec = laTransformVec4(&trans, &vec); // Apply translation matrix to vector
    
-	laMatPrint(a);
-	laMatMul(trans, a, res);
-    laMatPrint(trans);
-    laMatPrint(res);
+	printf("\nAfter:\n");
+	laMatPrint(vec); // Expected [69, 420, 69420, 1]
+	
+	printf("\n=== ROTATION ===\n");
+	vec = laVec4Scale(VEC4_RIGHT, 2, true); // (2, 0, 0)
+	
+	printf("Before:\n");
+	laMatPrint(vec);
 
-	/*Vec3 R = VEC3(0, 1, 1);
-    laVecNormalize(R);
+	Mat4 rot = laMat4GetRotation(VEC3_UP, deg2rad(45)); // Calculate rotation matrix
 
-    printf("Rotation axis:\n");
-    laMatPrint(R);
+	vec = laTransformVec4(&rot, &vec); // Rotate by 45 degrees clockwise
 
-    Mat4 rotation_mat = laMat4GetRotation(R, deg2rad(90.0f));
-
-    printf("\nRotation matrix:\n");
-    laMatPrint(rotation_mat);
-
-    Mat4 transl_mat = laMat4GetTranslation(VEC3(5.0f, 0.69f, 4.20f));
-
-    printf("\nTranslation matrix:\n");
-    laMatPrint(transl_mat);
-
-    Mat4 trans_mat = laMat4Empty;
-    laMatMul(rotation_mat, transl_mat, trans_mat);
-
-    printf("\nTransform matrix:\n");
-    laMatPrint(trans_mat);
-
-    Vec4 vec = VEC4(1, 1, 1, 1);
-    
-    printf("\nVector before transform:\n");
-    laMatPrint(vec);
-
-    Vec4 new_vec = laVec4Empty;
-
-    laMatMul(trans_mat, vec, new_vec); // Note: laMatMul(trans_mat, vec, vec) does not work since the 3rd parameter is updated in real-time
-
-    printf("\nVector after transform:\n");
-    laMatPrint(new_vec);*/
+	printf("\nAfter:\n");
+	laMatPrint(vec); // Expected [1.4142, 0, -1.4142, 1]
 
     return 0;
 }

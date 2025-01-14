@@ -29,6 +29,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include <math.h>
+#include <stdbool.h>
 
 #define PI   3.14159265359
 #define PI_2 6.28318530718
@@ -78,6 +79,13 @@ typedef struct {
 #define laVec3New(x, y, z) (Vec3){3, 1, {(x), (y), (z)}}
 #define VEC3(x, y, z) (Vec3){3, 1, {(x), (y), (z)}}
 
+#define VEC3_RIGHT    (VEC3(1.0f, 0.0f, 0.0f))
+#define VEC3_LEFT     (VEC3(-1.0f, 0.0f, 0.0f))
+#define VEC3_UP       (VEC3(0.0f, 1.0f, 0.0f))
+#define VEC3_DOWN     (VEC3(0.0f, -1.0f, 0.0f))
+#define VEC3_FORWARD  (VEC3(0.0f, 0.0f, 1.0f))
+#define VEC3_BACKWARD (VEC3(0.0f, 0.0f, -1.0f))
+
 typedef struct {
 	unsigned char rows;
 	unsigned char cols;
@@ -88,9 +96,12 @@ typedef struct {
 #define laVec4New(x, y, z, w) ((Vec4){4, 1, {(x), (y), (z), (w)}})
 #define VEC4(x, y, z, w) ((Vec4){4, 1, {(x), (y), (z), (w)}})
 
-#define RIGHT (VEC4(1.0f, 0.0f, 0.0f, 1.0f))
-#define UP (VEC4(0.0f, 1.0f, 0.0f, 1.0f))
-#define FORWARD (VEC4(0.0f, 0.0f, 1.0f, 1.0f))
+#define VEC4_RIGHT    (VEC4(1.0f, 0.0f, 0.0f, 1.0f))
+#define VEC4_LEFT     (VEC4(-1.0f, 0.0f, 0.0f, 1.0f))
+#define VEC4_UP       (VEC4(0.0f, 1.0f, 0.0f, 1.0f))
+#define VEC4_DOWN     (VEC4(0.0f, -1.0f, 0.0f, 1.0f))
+#define VEC4_FORWARD  (VEC4(0.0f, 0.0f, 1.0f, 1.0f))
+#define VEC4_BACKWARD (VEC4(0.0f, 0.0f, -1.0f, 1.0f))
 
 typedef struct {
     unsigned char rows;
@@ -130,6 +141,33 @@ typedef struct {
  * Operations
  */
 
+void matscale(float* data, int rows, int cols, float scalar) {
+	for(int r = 0; r < rows; r++) {
+		for(int c = 0; c < cols; c++) { // C++?? In MY library??? OUTRAGEOUS!
+			laMatSetRaw(laMatGetRaw(data, r, c, cols) * scalar, data, r, c, cols);
+		}
+	}
+}
+
+#define laMatScale(mat, scalar) (matscale((mat).data, (mat).rows, (mat).cols, (scalar)))
+
+Vec4 laVec4Scale(const Vec4 vec, float scalar, bool ignore_w) {
+	Vec4 newvec;
+	newvec.rows = 4;
+	newvec.cols = 1;
+	if(ignore_w) {
+		for(int i = 0; i < 3; i++) {
+			newvec.data[i] = vec.data[i] * scalar;
+		}
+		newvec.data[3] = vec.data[3];
+	} else {
+		for(int i = 0; i < 4; i++) {
+			newvec.data[i] = vec.data[i] * scalar;
+		}
+	}
+	return newvec;
+}
+
 float veclen(const float* data, int rows) {
     float square_sum;
     for(int i = 0; i < rows; i++) {
@@ -159,9 +197,8 @@ Mat4 laMat4GetRotation(Vec3 R, float angle) {
     const float x=R.data[0], y=R.data[1], z=R.data[2];
     const float sinang = sin(angle);
     const float cosang = cos(angle);
-    // TODO check if row-col order is correct
     return (Mat4){4, 4, {
-        cosang + x*x * (1 - cosang),    x*y * (1 - cosang) + z * sinang,    z * x * (1 - cosang) - z * sinang,  0,
+        cosang + x*x * (1 - cosang),    x*y * (1 - cosang) + z * sinang,    z * x * (1 - cosang) - y * sinang,  0,
         x*y*(1 - cosang) - z * sinang,  cosang + y*y * (1 - cosang),        z * y * (1 - cosang) + x * sinang,  0,
         x*z*(1 - cosang) + y * sinang,  y*z*(1 - cosang) - x*sinang,        cosang + z*z*(1 - cosang),          0,
         0,                              0,                                  0,                                  1 
@@ -256,6 +293,48 @@ int matsafemul(const Mat* A, const Mat* B, Mat* C) {
 }
 
 #define laMatSafeMul(A, B, C) matsafemul(&A, &B, &C)
+
+/**
+ * Multiply two Mat4's. This method is preffered over laMatMul when
+ * working specifically with the above mentioned transformation
+ */
+Mat4 laTransformMat4(const Mat4* A, const Mat4* B) {
+	Mat4 C;
+	C.rows = 4;
+	C.cols = 4;
+	
+	for(int ar = 0; ar < 4; ar++) {
+		for(int bc = 0; bc < 4; bc++) {
+			float sum = 0.0f;
+			for(int i = 0; i < 4; i++) {
+				sum += A->data[i * 4 + ar] * B->data[bc * 4 + i];
+			}
+			C.data[bc * 4 + ar] = sum;
+		}
+	}
+
+	return C;
+}
+
+/**
+ * Multiply a Mat4 by a Vec4. This method is preffered over laMatMul when
+ * working specifically with the above mentioned transformation
+ */
+Vec4 laTransformVec4(const Mat4* A, const Vec4* B) {
+	Vec4 C;
+	C.rows = 4;
+	C.cols = 1;
+	
+	for(int ar = 0; ar < 4; ar++) {
+		float sum = 0.0f;
+		for(int i = 0; i < 4; i++) {
+			sum += A->data[i * 4 + ar] * B->data[i];
+		}
+		C.data[ar] = sum;
+	}
+
+	return C;
+}
 
 /*
  * Arbitrary Mat's
